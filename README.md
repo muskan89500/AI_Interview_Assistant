@@ -1,86 +1,181 @@
- 🤖 AI Interview Preparation Assistant
+ <div align="center">
 
-An interactive **AI-powered Interview Preparation Assistant** built using **Python** and **Streamlit**. It helps students and job seekers practice technical interview questions, evaluate their performance, and download their interview results.
+<img src="https://em-content.zobj.net/source/microsoft-teams/337/robot_1f916.png" width="90" />
+
+# AI Interview Preparation Assistant
+
+**Practice smarter. Answer better. Get hired.**
+
+An interactive AI-powered platform that helps students and job seekers practice technical interviews with instant, structured feedback — no human interviewer required.
+
+<br>
+
+[![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-Try_it_Now-FF4B4B?style=for-the-badge)](https://aiinterviewassistant-cune8tgx7mxxgslvfk2yvc.streamlit.app/)
+
+![Python](https://img.shields.io/badge/Python-3.13-3776AB?style=flat-square&logo=python&logoColor=white)
+![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=flat-square&logo=streamlit&logoColor=white)
+![Status](https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square)
+![PRs](https://img.shields.io/badge/PRs-Welcome-blueviolet?style=flat-square)
+
+</div>
+
+<br>
 
 ---
 
-✨ Features
+# 📚 Table of Contents
 
-* 👤 Candidate Registration
-* 💼 Multiple Job Roles (Python Developer, Data Analyst, Web Developer)
-* ❓ Role-Based Technical Interview Questions
-* ⏱️ Interview Time Reminder
-* 📊 Automatic Score Calculation
-* 📈 Progress Bar
-* 📥 Download Interview Result
-* 🎨 Simple & User-Friendly Interface
+- [Overview](#-overview)
+- [Features](#-features)
+- [Demo](#-demo)
+- [Tech Stack](#️-tech-stack)
+- [Getting Started](#-getting-started)
+- [AI-Based Smart Checking](#-ai-based-smart-checking-optional)
+- [Roadmap](#-roadmap)
+- [Author](#-author)
 
+---
 
- 🛠️ Tech Stack
+# 🌟 Overview
 
-* 🐍 Python
-* 🎈 Streamlit
+Candidates register, choose a job role, answer real interview-style questions under a timer, and get **instant feedback** — Correct, Partially Correct, or Incorrect — along with a model answer to learn from. At the end, they get a full performance breakdown and a downloadable report.
 
+> Built for anyone preparing for technical interviews who wants a quick, judgment-free way to practice.
 
- 📦 Installation
+---
 
- 1. Clone the Repository
+# ✨ Features
+
+<table>
+<tr>
+<td width="50%" valign="top">
+
+**👤 Candidate Experience**
+- Name / email / role registration with validation
+- 5 job roles: Python, Data Analyst, Web Dev, Java, SQL
+- Difficulty tags on every question
+- ⏰ Live 30-second countdown timer
+
+</td>
+<td width="50%" valign="top">
+
+**🧠 Smart Evaluation**
+- ✅ Instant answer correctness detection
+- 🤖 Optional AI-based semantic grading (Claude)
+- 📊 Real-time score & progress sidebar
+- 📋 Full answer review with model answers
+
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+
+**📥 Results**
+- Downloadable `.txt` performance report
+- Score breakdown per question
+- Key points detected for every answer
+
+</td>
+<td width="50%" valign="top">
+
+**🔄 Flexibility**
+- Restart anytime, no page refresh needed
+- Works instantly — no login/setup required
+- Gracefully falls back if AI isn't configured
+
+</td>
+</tr>
+</table>
+
+---
+
+## 🎬 Demo
+
+<div align="center">
+
+**[👉 Click here to try the live app](https://aiinterviewassistant-cune8tgx7mxxgslvfk2yvc.streamlit.app/)**
+
+*No installation. No sign-up. Just open and start practicing.*
+
+</div>
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technology |
+|---|---|
+| **Language** | Python 🐍 |
+| **Framework** | Streamlit |
+| **AI Grading** *(optional)* | Anthropic Claude API |
+| **Deployment** | Streamlit Community Cloud |
+
+---
+
+# 🚀 Getting Started
+
+# Option 1 — Use it instantly (recommended)
+No setup needed:
+👉 **[Open the live app](https://aiinterviewassistant-cune8tgx7mxxgslvfk2yvc.streamlit.app/)**
+
+# Option 2 — Run locally
 
 ```bash
-git clone https://github.com/your-username/AI-Interview-Preparation-Assistant.git
-cd AI-Interview-Preparation-Assistant
-```
+# Clone the repo
+git clone https://github.com/muskan89500/AI_Interview_Assistant.git
+cd AI_Interview_Assistant
 
- 2. Install Required Libraries
+# Install dependencies
+pip install -r requirements.txt
 
-```bash
-pip install streamlit
-```
-
- 3. Run the Project
-
-```bash
+# Run the app
 streamlit run app.py
 ```
 
+App opens automatically at `http://localhost:8501` 🎉
 
- 🖼️ Project Preview
+---
+## 🔑 AI-Based Smart Checking *(Optional)*
 
-* 🏠 Home Screen
-* 👤 Candidate Details
-* ❓ Interview Questions
-* 📊 Final Score
-* 📥 Download Result
+By default, answers are graded using **keyword matching** — works instantly with zero setup.
 
+Want smarter, human-like grading that understands paraphrased answers?
 
- 🎯 What I Learned
+1. Get a free API key from [console.anthropic.com](https://console.anthropic.com)
+2. Add it as `ANTHROPIC_API_KEY` under your Streamlit app's **Secrets**
+3. Done — the app auto-detects it and switches to AI grading ✨
 
-While building this project, I learned:
+> If no key is set, the app silently falls back to keyword checking. Nothing breaks either way.
 
-* Developing interactive web apps using **Streamlit**
-* Managing application state with **Session State**
-* Creating role-based interview workflows
-* Implementing automatic scoring logic
-* Building user-friendly interfaces
-* Generating downloadable reports
+---
 
+# 🗺️ Roadmap
 
- 🚀 Future Improvements
+- [ ] 🎙️ Voice-based answers
+- [ ] 📈 Difficulty-adaptive question flow
+- [ ] 🗂️ Results history dashboard
+- [ ] 🌐 More job roles & languages
 
-* 🤖 AI-based answer evaluation
-* ⏳ Live countdown timer
-* 🎤 Voice-based interview
-* 📄 PDF report generation
-* 🔐 User login & authentication
-* 📚 More interview categories
-* 📊 Performance analytics dashboard
-* ☁️ Database integration
+---
 
+# 🙋 Author
 
- 👩‍💻 Developer
+<div align="center">
 
-Muskan Sharma
-*BCA Student | Python Developer | AI & Data Analytics Enthusiast*
+Built with ❤️ by **Muskan**
 
+[![GitHub](https://img.shields.io/badge/GitHub-muskan89500-181717?style=flat-square&logo=github)](https://github.com/muskan89500)
+
+</div>
+
+---
+
+<div align="center">
+
+### ⭐ If this project helped you, consider giving it a star!
+
+</div>
+
+ 
 
 
