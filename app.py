@@ -131,12 +131,16 @@ def keyword_check(user_answer, keywords):
     matched = [kw for kw in keywords if kw.lower() in answer_lower]
     ratio = len(matched) / len(keywords) if keywords else 0
 
-    if ratio >= 0.6:
+    # BUG FIX: previously a short-but-correct answer (e.g. matching just 1 of 5
+    # keywords) could score below the "Partial" threshold and be marked
+    # Incorrect. Now, matching ANY keyword guarantees at least Partial credit,
+    # and a strong majority match (40%+) counts as fully Correct.
+    if ratio >= 0.4:
         return "✅ Correct", matched, 10, "Good answer! You covered the key points."
-    elif ratio >= 0.25:
-        return "🟡 Partially Correct", matched, 5, "You covered some key points, but missed a few."
+    elif len(matched) >= 1:
+        return "🟡 Partially Correct", matched, 5, "You're on the right track, but try to include more detail."
     else:
-        return "❌ Incorrect", matched, 0, "This answer misses most key points."
+        return "❌ Incorrect", matched, 0, "This answer misses the key points. Check the model answer below."
 
 
 def ai_check_answer(question_text, user_answer, model_answer):
