@@ -596,10 +596,11 @@ def page_home():
                 with st.container(border=True):
                     st.markdown(f"**{title}**")
                     st.caption(desc)
-                    st.button(
+                    if st.button(
     "Open →",
     key=f"home_card_{target_page}_{i}"
-)
+):
+    goto(target_page)
                         goto(target_page)
 
     st.divider()
@@ -1061,7 +1062,7 @@ def page_admin():
 # SECTION 5 — APP ENTRY / NAVIGATION
 # ============================================================
 
-st.set_page_config(page_title="AI Interview Preparation Assistant", page_icon="🤖", layout="centered")
+
 
 # ------------------- SESSION STATE DEFAULTS -------------------
 _providers = available_providers()  # always includes "Keyword"; may include "Claude" / "GPT"
