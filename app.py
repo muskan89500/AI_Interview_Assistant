@@ -5,10 +5,11 @@ Practice interview questions across CS Fundamentals + role-specific tracks,
 filter by difficulty (Easy / Medium / Hard), get answers graded (Claude
 and/or OpenAI GPT if API keys are configured, otherwise keyword-based),
 track progress per topic across sessions, and view all registered users'
-data from a password-protected Admin Panel — all backed by a local JSON
-file (students_data.json, created next to this script).
+data — including course and academic marks — from a password-protected
+Admin Panel. All backed by a local JSON file (students_data.json, created
+next to this script).
 
-Run with:  streamlit run app. 
+Run with:  streamlit run app.py
 """
 
 import csv
@@ -227,12 +228,14 @@ TOPIC_RESOURCES = {
 
 DATA_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "students_data.json")
 
-def _empty_student(name, email, branch, year, preferred_role):
+def _empty_student(name, email, branch, course, year, marks, preferred_role):
     return {
         "name": name,
         "email": email,
         "branch": branch,
+        "course": course,
         "year": year,
+        "marks": marks,
         "preferred_role": preferred_role,
         "topic_scores": {},
         "attempts": [],
@@ -244,9 +247,15 @@ def load_data():
         return {}
     try:
         with open(DATA_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
+            data = json.load(f)
     except (json.JSONDecodeError, OSError):
         return {}
+    # Backfill fields added after some profiles were already saved, so older
+    # records don't break pages that expect these keys to exist.
+    for student in data.values():
+        student.setdefault("course", "")
+        student.setdefault("marks", None)
+    return data
 
 
 def save_data(data):
@@ -263,17 +272,19 @@ def get_student(email):
     return data.get(normalize_email(email))
 
 
-def upsert_profile(name, email, branch, year, preferred_role):
+def upsert_profile(name, email, branch, course, year, marks, preferred_role):
     """Create or update a student's profile without touching their history."""
     data = load_data()
     key = normalize_email(email)
     if key in data:
         data[key]["name"] = name
         data[key]["branch"] = branch
+        data[key]["course"] = course
         data[key]["year"] = year
+        data[key]["marks"] = marks
         data[key]["preferred_role"] = preferred_role
     else:
-        data[key] = _empty_student(name, email, branch, year, preferred_role)
+        data[key] = _empty_student(name, email, branch, course, year, marks, preferred_role)
     save_data(data)
     return data[key]
 
@@ -591,17 +602,13 @@ def page_home():
 
     for i in range(0, len(cards), 2):
         c1, c2 = st.columns(2)
-
-        for col, (title, desc, target_page) in zip((c1, c2), cards[i:i + 2]):
+        row = list(enumerate(cards[i:i + 2], start=i))
+        for col, (idx, (title, desc, target_page)) in zip((c1, c2), row):
             with col:
                 with st.container(border=True):
                     st.markdown(f"**{title}**")
                     st.caption(desc)
-
-                    if st.button(
-                        "Open →",
-                        key=f"home_card_{target_page}_{i}"
-                    ):
+                    if st.button("Open →", key=f"home_card_{idx}"):
                         goto(target_page)
 
     st.divider()
@@ -626,7 +633,10 @@ def page_profile():
     name_default = existing["name"] if existing else ""
     email_default = existing["email"] if existing else ""
     branch_default = existing["branch"] if existing else "BTech"
+    course_default = existing.get("course", "") if existing else ""
     year_default = existing["year"] if existing else "1st Year"
+    marks_default = existing.get("marks") if existing else None
+    marks_default = marks_default if marks_default is not None else 0.0
     role_default = existing["preferred_role"] if existing else all_roles()[0]
 
     with st.form("profile_form"):
@@ -637,9 +647,13 @@ def page_profile():
         branch = st.selectbox("Branch", ["BTech", "BCA", "MCA", "BSc IT", "MTech", "Other"],
                                index=["BTech", "BCA", "MCA", "BSc IT", "MTech", "Other"].index(branch_default)
                                if branch_default in ["BTech", "BCA", "MCA", "BSc IT", "MTech", "Other"] else 0)
+        course = st.text_input("Course / Specialization (e.g. Computer Science, Data Science)",
+                                value=course_default)
         year = st.selectbox("Year", ["1st Year", "2nd Year", "3rd Year", "4th Year", "Graduated"],
                              index=["1st Year", "2nd Year", "3rd Year", "4th Year", "Graduated"].index(year_default)
                              if year_default in ["1st Year", "2nd Year", "3rd Year", "4th Year", "Graduated"] else 0)
+        marks = st.number_input("Academic Marks / CGPA (%)", min_value=0.0, max_value=100.0,
+                                 value=float(marks_default), step=0.1)
         submitted = st.form_submit_button("💾 Save Profile", type="primary")
 
     if submitted:
@@ -648,7 +662,7 @@ def page_profile():
         elif not is_valid_email(email):
             st.error("Please enter a valid email address.")
         else:
-            upsert_profile(name.strip(), email.strip(), branch, year, role)
+            upsert_profile(name.strip(), email.strip(), branch, course.strip(), year, marks, role)
             st.session_state.student_email = email.strip()
             st.success("Profile saved!")
             st.rerun()
@@ -993,7 +1007,7 @@ def page_admin():
         st.info("This page is restricted. Enter the admin password to continue.")
         pwd = st.text_input("Admin Password", type="password")
         if st.button("🔓 Login"):
-            expected = st.secrets.get("ADMIN_PASSWORD", "13032006")
+            expected = st.secrets.get("ADMIN_PASSWORD", "admin123")
             if pwd == expected:
                 st.session_state.admin_authenticated = True
                 st.rerun()
@@ -1019,7 +1033,9 @@ def page_admin():
             "Name": s["name"],
             "Email": s["email"],
             "Branch": s["branch"],
+            "Course": s.get("course", ""),
             "Year": s["year"],
+            "Marks (%)": s.get("marks") if s.get("marks") is not None else "-",
             "Preferred Role": s["preferred_role"],
             "Total Attempts": len(s["attempts"]),
             "Overall Score %": avg if avg is not None else "-",
@@ -1043,7 +1059,9 @@ def page_admin():
     if selected_email:
         s = data[selected_email]
         st.write(f"**Name:** {s['name']}  \n**Email:** {s['email']}  \n**Branch:** {s['branch']}  \n"
-                 f"**Year:** {s['year']}  \n**Preferred Role:** {s['preferred_role']}")
+                 f"**Course:** {s.get('course') or '—'}  \n**Year:** {s['year']}  \n"
+                 f"**Marks/CGPA:** {s.get('marks') if s.get('marks') is not None else '—'}%  \n"
+                 f"**Preferred Role:** {s['preferred_role']}")
 
         if not s["attempts"]:
             st.caption("No attempts yet.")
@@ -1063,7 +1081,7 @@ def page_admin():
 # SECTION 5 — APP ENTRY / NAVIGATION
 # ============================================================
 
-
+st.set_page_config(page_title="AI Interview Preparation Assistant", page_icon="🤖", layout="centered")
 
 # ------------------- SESSION STATE DEFAULTS -------------------
 _providers = available_providers()  # always includes "Keyword"; may include "Claude" / "GPT"
