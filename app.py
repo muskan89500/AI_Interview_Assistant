@@ -596,7 +596,10 @@ def page_home():
                 with st.container(border=True):
                     st.markdown(f"**{title}**")
                     st.caption(desc)
-                    if st.button("Open →", key=f"home_card_{target_page}"):
+                    st.button(
+    "Open →",
+    key=f"home_card_{target_page}_{i}"
+)
                         goto(target_page)
 
     st.divider()
