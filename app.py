@@ -1007,7 +1007,7 @@ def page_admin():
         st.info("This page is restricted. Enter the admin password to continue.")
         pwd = st.text_input("Admin Password", type="password")
         if st.button("🔓 Login"):
-            expected = st.secrets.get("ADMIN_PASSWORD", "admin123")
+            expected = st.secrets.get("ADMIN_PASSWORD", "tannu")
             if pwd == expected:
                 st.session_state.admin_authenticated = True
                 st.rerun()
