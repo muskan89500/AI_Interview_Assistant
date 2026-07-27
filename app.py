@@ -591,16 +591,17 @@ def page_home():
 
     for i in range(0, len(cards), 2):
         c1, c2 = st.columns(2)
+
         for col, (title, desc, target_page) in zip((c1, c2), cards[i:i + 2]):
             with col:
                 with st.container(border=True):
                     st.markdown(f"**{title}**")
                     st.caption(desc)
+
                     if st.button(
-    "Open →",
-    key=f"home_card_{target_page}_{i}"
-):
-    goto(target_page)
+                        "Open →",
+                        key=f"home_card_{target_page}_{i}"
+                    ):
                         goto(target_page)
 
     st.divider()
