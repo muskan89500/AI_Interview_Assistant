@@ -136,5 +136,15 @@ __pycache__/
 - [ ] Voice-based answer input
 
 ---
+---
 
+<div align="center">
+
+## 🤖 Developed with ❤️ by **Muskan Sharma**
+
+### *Empowering Learning Through AI & Python*
+
+⭐ Thanks for visiting this repository. Happy Coding! 🚀
+
+</div>
 
