@@ -4,12 +4,15 @@ AI Interview Preparation Assistant — single-file build.
 Practice interview questions across CS Fundamentals + role-specific tracks,
 filter by difficulty (Easy / Medium / Hard), get answers graded (Claude
 and/or OpenAI GPT if API keys are configured, otherwise keyword-based),
-and track progress per topic across sessions via a local JSON file
-(students_data.json, created next to this script).
+track progress per topic across sessions, and view all registered users'
+data from a password-protected Admin Panel — all backed by a local JSON
+file (students_data.json, created next to this script).
 
-Run with:  streamlit run app.py
+Run with:  streamlit run app. 
 """
 
+import csv
+import io
 import json
 import os
 import re
@@ -974,6 +977,83 @@ def page_roadmap():
             st.write(TOPIC_RESOURCES.get(topic, "Practice more questions in this area."))
 
 
+# ------------------------------------------------------------------
+# ADMIN PANEL — view every registered user's data in one place
+# ------------------------------------------------------------------
+
+def page_admin():
+    st.subheader("🔐 Admin Panel")
+
+    if not st.session_state.get("admin_authenticated"):
+        st.info("This page is restricted. Enter the admin password to continue.")
+        pwd = st.text_input("Admin Password", type="password")
+        if st.button("🔓 Login"):
+            expected = st.secrets.get("ADMIN_PASSWORD", "admin123")
+            if pwd == expected:
+                st.session_state.admin_authenticated = True
+                st.rerun()
+            else:
+                st.error("Incorrect password.")
+        return
+
+    data = load_data()
+    if not data:
+        st.info("No users have registered yet.")
+        if st.button("🔒 Log Out of Admin"):
+            st.session_state.admin_authenticated = False
+            st.rerun()
+        return
+
+    st.success(f"👥 Total Registered Users: {len(data)}")
+
+    rows = []
+    for email, s in data.items():
+        score_rows = topic_score_table(s)
+        avg, _ = readiness_from_rows(score_rows)
+        rows.append({
+            "Name": s["name"],
+            "Email": s["email"],
+            "Branch": s["branch"],
+            "Year": s["year"],
+            "Preferred Role": s["preferred_role"],
+            "Total Attempts": len(s["attempts"]),
+            "Overall Score %": avg if avg is not None else "-",
+            "Last Activity": s["attempts"][-1]["timestamp"].replace("T", " ") if s["attempts"] else "Never",
+        })
+
+    st.dataframe(rows, use_container_width=True, hide_index=True)
+
+    buf = io.StringIO()
+    writer = csv.DictWriter(buf, fieldnames=list(rows[0].keys()))
+    writer.writeheader()
+    writer.writerows(rows)
+    st.download_button("📥 Download All Users (CSV)", buf.getvalue(),
+                        file_name="all_users_data.csv", mime="text/csv")
+
+    st.divider()
+    st.subheader("🔍 View Individual User Detail")
+    emails = list(data.keys())
+    selected_email = st.selectbox("Select a user", emails,
+                                   format_func=lambda e: f"{data[e]['name']} ({e})")
+    if selected_email:
+        s = data[selected_email]
+        st.write(f"**Name:** {s['name']}  \n**Email:** {s['email']}  \n**Branch:** {s['branch']}  \n"
+                 f"**Year:** {s['year']}  \n**Preferred Role:** {s['preferred_role']}")
+
+        if not s["attempts"]:
+            st.caption("No attempts yet.")
+        for a in reversed(s["attempts"]):
+            ts = a["timestamp"].replace("T", " ")
+            with st.expander(f"{ts} · {a['role']} ({a['mode']}) · {a['score']}/{a['possible']}"):
+                for item in a["feedback_log"]:
+                    st.write(f"- **{item['question']}** ({item['topic']}) → {item['result']} ({item['points']} pts)")
+
+    st.divider()
+    if st.button("🔒 Log Out of Admin"):
+        st.session_state.admin_authenticated = False
+        st.rerun()
+
+
 # ============================================================
 # SECTION 5 — APP ENTRY / NAVIGATION
 # ============================================================
@@ -985,6 +1065,7 @@ _providers = available_providers()  # always includes "Keyword"; may include "Cl
 defaults = {
     "page": "Home",
     "student_email": None,
+    "admin_authenticated": False,
     # Default to the best available AI grader, falling back to keyword matching
     "ai_provider": "Claude" if CLAUDE_AVAILABLE else ("GPT" if GPT_AVAILABLE else "Keyword"),
 }
@@ -1000,6 +1081,7 @@ PAGES = {
     "AI Roadmap": page_roadmap,
     "Interview Questions": page_interview,
     "Progress Tracker": page_progress_tracker,
+    "Admin Panel": page_admin,
 }
 
 # ------------------- SIDEBAR -------------------
