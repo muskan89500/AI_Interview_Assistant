@@ -1,181 +1,140 @@
- <div align="center">
+# 🤖 AI Interview Preparation Assistant
 
-<img src="https://em-content.zobj.net/source/microsoft-teams/337/robot_1f916.png" width="90" />
+A Streamlit web app that helps students and job-seekers practice interview
+questions, get their answers graded, and track their progress over time —
+across both **core CS fundamentals** (Arrays, Linked Lists, Stacks, Queues,
+DBMS, OS) and **role-specific tracks** (Python, Data Analyst, Web Dev, Java,
+SQL).
 
-# AI Interview Preparation Assistant
+Answers can be graded two ways:
+- **AI-based semantic grading** using Claude, if you provide an API key
+- **Keyword-based grading** as an automatic fallback with zero setup
 
-**Practice smarter. Answer better. Get hired.**
-
-An interactive AI-powered platform that helps students and job seekers practice technical interviews with instant, structured feedback — no human interviewer required.
-
-<br>
-
-[![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-Try_it_Now-FF4B4B?style=for-the-badge)](https://aiinterviewassistant-cune8tgx7mxxgslvfk2yvc.streamlit.app/)
-
-![Python](https://img.shields.io/badge/Python-3.13-3776AB?style=flat-square&logo=python&logoColor=white)
-![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=flat-square&logo=streamlit&logoColor=white)
-![Status](https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square)
-![PRs](https://img.shields.io/badge/PRs-Welcome-blueviolet?style=flat-square)
-
-</div>
-
-<br>
-
----
-
-# 📚 Table of Contents
-
-- [Overview](#-overview)
-- [Features](#-features)
-- [Demo](#-demo)
-- [Tech Stack](#️-tech-stack)
-- [Getting Started](#-getting-started)
-- [AI-Based Smart Checking](#-ai-based-smart-checking-optional)
-- [Roadmap](#-roadmap)
-- [Author](#-author)
-
----
-
-# 🌟 Overview
-
-Candidates register, choose a job role, answer real interview-style questions under a timer, and get **instant feedback** — Correct, Partially Correct, or Incorrect — along with a model answer to learn from. At the end, they get a full performance breakdown and a downloadable report.
-
-> Built for anyone preparing for technical interviews who wants a quick, judgment-free way to practice.
+Everything runs from a single `app.py` file, with progress saved locally in
+a JSON file so your scores persist across sessions.
 
 ---
 
 # ✨ Features
 
-<table>
-<tr>
-<td width="50%" valign="top">
-
-**👤 Candidate Experience**
-- Name / email / role registration with validation
-- 5 job roles: Python, Data Analyst, Web Dev, Java, SQL
-- Difficulty tags on every question
-- ⏰ Live 30-second countdown timer
-
-</td>
-<td width="50%" valign="top">
-
-**🧠 Smart Evaluation**
-- ✅ Instant answer correctness detection
-- 🤖 Optional AI-based semantic grading (Claude)
-- 📊 Real-time score & progress sidebar
-- 📋 Full answer review with model answers
-
-</td>
-</tr>
-<tr>
-<td width="50%" valign="top">
-
-**📥 Results**
-- Downloadable `.txt` performance report
-- Score breakdown per question
-- Key points detected for every answer
-
-</td>
-<td width="50%" valign="top">
-
-**🔄 Flexibility**
-- Restart anytime, no page refresh needed
-- Works instantly — no login/setup required
-- Gracefully falls back if AI isn't configured
-
-</td>
-</tr>
-</table>
-
----
-
-## 🎬 Demo
-
-<div align="center">
-
-**[👉 Click here to try the live app](https://aiinterviewassistant-cune8tgx7mxxgslvfk2yvc.streamlit.app/)**
-
-*No installation. No sign-up. Just open and start practicing.*
-
-</div>
-
----
-
-## 🛠️ Tech Stack
-
-| Layer | Technology |
+| Page | What it does |
 |---|---|
-| **Language** | Python 🐍 |
-| **Framework** | Streamlit |
-| **AI Grading** *(optional)* | Anthropic Claude API |
-| **Deployment** | Streamlit Community Cloud |
+| 🏠 **Home** | Live stats (students practicing, questions available, success rate) and quick links into every feature |
+| 👤 **Student Profile** | Save your name, email, preferred role, branch, and year — this is what ties your progress together |
+| 📊 **Skill Assessment** | Untimed, multi-topic quickfire quiz — pick one or more roles and get graded instantly |
+| 💡 **Interview Questions** | A focused, timed mock-interview flow for a single role, with a 30s-per-question timer |
+| 📈 **Progress Tracker** | Per-topic score table (Current vs. Target) plus an overall interview-readiness verdict |
+| 📉 **Dashboard** | Total attempts, overall score, a topic breakdown bar chart, weakest topic, and recent attempt history |
+| 🗺️ **AI Roadmap** | Auto-detects weak topics (<50%) and suggests what to study next — with an optional Claude-generated personalized paragraph |
 
 ---
 
-# 🚀 Getting Started
+# 🖼️ Screenshots
 
-# Option 1 — Use it instantly (recommended)
-No setup needed:
-👉 **[Open the live app](https://aiinterviewassistant-cune8tgx7mxxgslvfk2yvc.streamlit.app/)**
+_Add your own screenshots here, e.g.:_
 
-# Option 2 — Run locally
-
-```bash
-# Clone the repo
-git clone https://github.com/muskan89500/AI_Interview_Assistant.git
-cd AI_Interview_Assistant
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Run the app
-streamlit run app.py
+```md
+![Home Page](screenshots/home.png)
+![Progress Tracker](screenshots/progress_tracker.png)
 ```
 
-App opens automatically at `http://localhost:8501` 🎉
-
----
-## 🔑 AI-Based Smart Checking *(Optional)*
-
-By default, answers are graded using **keyword matching** — works instantly with zero setup.
-
-Want smarter, human-like grading that understands paraphrased answers?
-
-1. Get a free API key from [console.anthropic.com](https://console.anthropic.com)
-2. Add it as `ANTHROPIC_API_KEY` under your Streamlit app's **Secrets**
-3. Done — the app auto-detects it and switches to AI grading ✨
-
-> If no key is set, the app silently falls back to keyword checking. Nothing breaks either way.
-
 ---
 
-# 🗺️ Roadmap
+# 🧱 Tech Stack
 
-- [ ] 🎙️ Voice-based answers
-- [ ] 📈 Difficulty-adaptive question flow
-- [ ] 🗂️ Results history dashboard
-- [ ] 🌐 More job roles & languages
+- [Streamlit](https://streamlit.io/) — UI framework
+- [Anthropic Claude API](https://docs.claude.com/) — optional semantic answer grading & AI roadmap generation
+- Plain JSON file storage — no database required
+
+---
+# 🚀 Getting Started
+
+# 1. Clone the repo
+```bash
+git clone https://github.com/<your-username>/ai-interview-prep-assistant.git
+cd ai-interview-prep-assistant
+```
+
+# 2. Install dependencies
+```bash
+pip install streamlit anthropic
+```
+
+# 3. (Optional) Enable AI-based grading
+Create `.streamlit/secrets.toml` in the project root:
+```toml
+ANTHROPIC_API_KEY = "your-api-key-here"
+```
+Without this file, the app works fully out of the box using keyword-based
+grading — nothing breaks, you just won't get semantic grading or the
+AI-generated roadmap paragraph.
+
+# 4. Run the app
+```bash
+streamlit run app.py
+```
+The app will open at `http://localhost:8501`.
 
 ---
 
-# 🙋 Author
+# 📂 Project Structure
 
-<div align="center">
+```
+.
+├── app.py               # Full application — question bank, storage, grading, and all pages
+├── students_data.json   # Auto-created on first run; stores profiles + progress (gitignored)
+└── .streamlit/
+    └── secrets.toml      # Optional — your ANTHROPIC_API_KEY (gitignored)
+```
 
-Built with ❤️ by **Muskan**
-
-[![GitHub](https://img.shields.io/badge/GitHub-muskan89500-181717?style=flat-square&logo=github)](https://github.com/muskan89500)
-
-</div>
+> `app.py` is intentionally a single file for easy deployment (e.g. Streamlit
+> Community Cloud) and simple copy/paste updates. It's organized internally
+> into five clearly commented sections: Question Bank, Persistence, Grading,
+> Pages, and App Entry/Navigation.
 
 ---
 
-<div align="center">
+# 💾 How Progress Tracking Works
 
-### ⭐ If this project helped you, consider giving it a star!
+Every question is tagged with a **topic** (e.g. `Arrays`, `OOP Concepts`,
+`Database Design`). Whenever you complete a Skill Assessment or Interview,
+your score is added to that topic's running total in `students_data.json`,
+keyed by your email. The Progress Tracker, Dashboard, and AI Roadmap pages
+all read from that same per-topic data, so they always stay in sync.
 
-</div>
+**Readiness scoring** (tweakable in the `readiness_from_rows()` function):
+| Average Score | Verdict |
+|---|---|
+| 80%+ | 🎉 You are Interview Ready! |
+| 50–79% | 📈 You are improving, but still need practice. |
+| < 50% | 🔴 You need more practice before your interview. |
 
- 
+---
+
+# ⚠️ Notes Before Deploying Publicly
+
+- `students_data.json` is **plain, unencrypted JSON** — fine for a personal
+  project, class assignment, or demo, but don't use it to store real users'
+  sensitive data in production without adding proper security.
+- Add `students_data.json` and `.streamlit/secrets.toml` to your
+  `.gitignore` so you don't accidentally commit user data or your API key.
+
+```gitignore
+students_data.json
+.streamlit/secrets.toml
+__pycache__/
+```
+
+---
+
+# 🛣️ Roadmap / Ideas for Contribution
+
+- [ ] Export progress/results as PDF
+- [ ] Add more roles and topics to the question bank
+- [ ] Auto-submit answers when the timer hits 0
+- [ ] Leaderboard across students
+- [ ] Voice-based answer input
+
+---
 
 
