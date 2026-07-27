@@ -334,7 +334,7 @@ CLAUDE_AVAILABLE = False
 claude_client = None
 try:
     import anthropic
-    _anthropic_key = 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
+    _anthropic_key = st.secrets.get("ANTHROPIC_API_KEY", None)
     if _anthropic_key:
         claude_client = anthropic.Anthropic(api_key=_anthropic_key)
         CLAUDE_AVAILABLE = True
@@ -347,7 +347,7 @@ gpt_client = None
 GPT_MODEL = "gpt-4o-mini"
 try:
     import openai
-    _openai_key = sk-...N2sA
+    _openai_key = st.secrets.get("OPENAI_API_KEY", None)
     if _openai_key:
         gpt_client = openai.OpenAI(api_key=_openai_key)
         GPT_MODEL = st.secrets.get("OPENAI_MODEL", GPT_MODEL)
