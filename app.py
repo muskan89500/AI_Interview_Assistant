@@ -2,7 +2,8 @@
 AI Interview Preparation Assistant — single-file build.
 
 Practice interview questions across CS Fundamentals + role-specific tracks,
-get graded (AI-based if ANTHROPIC_API_KEY is set, otherwise keyword-based),
+filter by difficulty (Easy / Medium / Hard), get answers graded (Claude
+and/or OpenAI GPT if API keys are configured, otherwise keyword-based),
 and track progress per topic across sessions via a local JSON file
 (students_data.json, created next to this script).
 
@@ -62,6 +63,24 @@ QUESTIONS = {
         {"q": "What is the difference between a Process and a Thread?", "difficulty": "Medium", "topic": "OS",
          "keywords": ["independent", "lightweight", "shared memory", "own memory", "execution"],
          "model_answer": "A process is an independent program in execution with its own memory space, while a thread is a lightweight unit within a process that shares the process's memory with other threads."},
+        {"q": "How would you find the maximum subarray sum in an array?", "difficulty": "Hard", "topic": "Arrays",
+         "keywords": ["kadane", "subarray", "running sum", "maximum", "o(n)"],
+         "model_answer": "Kadane's Algorithm solves this in O(n): keep a running sum of the current subarray, resetting it to 0 whenever it goes negative, and track the maximum sum seen so far."},
+        {"q": "How do you detect a cycle in a Linked List?", "difficulty": "Hard", "topic": "Linked List",
+         "keywords": ["floyd", "slow", "fast", "pointer", "cycle"],
+         "model_answer": "Floyd's Cycle Detection (slow/fast pointers) uses two pointers moving at different speeds through the list; if they ever meet, a cycle exists."},
+        {"q": "How would you implement a Stack using two Queues?", "difficulty": "Hard", "topic": "Stack",
+         "keywords": ["two queues", "enqueue", "dequeue", "reverse order", "rotate"],
+         "model_answer": "Push by enqueuing into the main queue, then dequeue and re-enqueue every earlier element behind it so the newest item ends up at the front, keeping LIFO order using only queue operations."},
+        {"q": "How would you implement a Queue using two Stacks?", "difficulty": "Hard", "topic": "Queue",
+         "keywords": ["two stacks", "push", "pop", "reverse", "amortized"],
+         "model_answer": "Use an 'in' stack for enqueue operations; when a dequeue is needed and the 'out' stack is empty, pop everything from 'in' and push it onto 'out', reversing the order so the oldest element is on top."},
+        {"q": "What is a Deadlock in DBMS and how can it be prevented?", "difficulty": "Hard", "topic": "DBMS",
+         "keywords": ["deadlock", "transactions", "locks", "prevention", "wait"],
+         "model_answer": "A deadlock occurs when two or more transactions each hold a lock the other needs and wait indefinitely; it can be prevented with timeout limits, lock ordering, or deadlock-detection algorithms that abort one transaction."},
+        {"q": "What is a Deadlock in an Operating System and what are its necessary conditions?", "difficulty": "Hard", "topic": "OS",
+         "keywords": ["mutual exclusion", "hold and wait", "no preemption", "circular wait"],
+         "model_answer": "An OS deadlock happens when processes wait forever for resources held by each other; it requires four conditions: mutual exclusion, hold-and-wait, no preemption, and circular wait."},
     ],
     "Python Developer": [
         {"q": "What is Python?", "difficulty": "Easy", "topic": "Python Basics",
@@ -73,6 +92,12 @@ QUESTIONS = {
         {"q": "What is a Dictionary?", "difficulty": "Medium", "topic": "Data Structures",
          "keywords": ["key", "value", "pair", "unordered", "mutable", "curly braces"],
          "model_answer": "A dictionary is a mutable collection of key-value pairs in Python, defined using curly braces, e.g. {'key': 'value'}."},
+        {"q": "What is the Global Interpreter Lock (GIL) in Python?", "difficulty": "Hard", "topic": "Python Basics",
+         "keywords": ["gil", "one thread", "bytecode", "cpython", "concurrency"],
+         "model_answer": "The GIL is a mutex in CPython that allows only one thread to execute Python bytecode at a time, which limits true parallelism for CPU-bound multi-threaded code."},
+        {"q": "What is the difference between a Shallow Copy and a Deep Copy?", "difficulty": "Hard", "topic": "Data Structures",
+         "keywords": ["shallow", "deep", "nested", "reference", "independent"],
+         "model_answer": "A shallow copy duplicates the outer object but keeps references to the same nested objects, while a deep copy recursively duplicates every nested object so the copy is fully independent."},
     ],
     "Data Analyst": [
         {"q": "What is Data Analysis?", "difficulty": "Easy", "topic": "Data Analysis Fundamentals",
@@ -84,6 +109,12 @@ QUESTIONS = {
         {"q": "What is Data Cleaning?", "difficulty": "Medium", "topic": "Data Analysis Fundamentals",
          "keywords": ["missing", "duplicate", "errors", "inconsistent", "correcting", "removing"],
          "model_answer": "Data cleaning is the process of detecting and correcting (or removing) missing, duplicate, or inconsistent data to improve data quality."},
+        {"q": "What is the difference between a Type I and Type II error in hypothesis testing?", "difficulty": "Hard", "topic": "Data Analysis Fundamentals",
+         "keywords": ["false positive", "false negative", "null hypothesis", "significance"],
+         "model_answer": "A Type I error is a false positive — rejecting a true null hypothesis — while a Type II error is a false negative — failing to reject a false null hypothesis."},
+        {"q": "How would you handle a dataset too large to fit into memory using Pandas?", "difficulty": "Hard", "topic": "Tools & Libraries",
+         "keywords": ["chunksize", "chunks", "dtype", "memory", "dask", "batches"],
+         "model_answer": "Read the data in chunks using `chunksize`, downcast column dtypes to reduce memory, or switch to a library like Dask that processes data out-of-core in batches."},
     ],
     "Web Developer": [
         {"q": "What is HTML?", "difficulty": "Easy", "topic": "Frontend Basics",
@@ -95,6 +126,12 @@ QUESTIONS = {
         {"q": "What is JavaScript?", "difficulty": "Medium", "topic": "Scripting",
          "keywords": ["scripting", "programming language", "interactive", "dynamic", "browser"],
          "model_answer": "JavaScript is a scripting/programming language that adds interactivity and dynamic behavior to webpages, running in the browser."},
+        {"q": "What is the CSS Box Model?", "difficulty": "Hard", "topic": "Frontend Basics",
+         "keywords": ["content", "padding", "border", "margin", "layout"],
+         "model_answer": "The CSS Box Model describes how every element is rendered as a box made up of content, padding, border, and margin layers, which together determine its total size and spacing."},
+        {"q": "What is the difference between var, let, and const in JavaScript?", "difficulty": "Hard", "topic": "Scripting",
+         "keywords": ["scope", "block", "function", "reassign", "hoisting"],
+         "model_answer": "`var` is function-scoped and hoisted, `let` is block-scoped and reassignable, and `const` is block-scoped but cannot be reassigned after declaration."},
     ],
     "Java Developer": [
         {"q": "What is Java?", "difficulty": "Easy", "topic": "Java Basics",
@@ -106,6 +143,12 @@ QUESTIONS = {
         {"q": "What is Inheritance?", "difficulty": "Medium", "topic": "OOP Concepts",
          "keywords": ["reuse", "parent", "child", "extends", "properties", "methods"],
          "model_answer": "Inheritance allows a child class to reuse and extend the properties and methods of a parent class using the 'extends' keyword."},
+        {"q": "What is the difference between JDK, JRE, and JVM?", "difficulty": "Hard", "topic": "Java Basics",
+         "keywords": ["development kit", "runtime environment", "virtual machine", "compile", "execute"],
+         "model_answer": "JDK is the full development kit (includes compiler + tools), JRE is the runtime environment needed to run Java programs, and JVM is the virtual machine that actually executes the compiled bytecode."},
+        {"q": "What is Polymorphism and how is it implemented in Java?", "difficulty": "Hard", "topic": "OOP Concepts",
+         "keywords": ["overloading", "overriding", "many forms", "runtime", "compile time"],
+         "model_answer": "Polymorphism lets an object take many forms; in Java it's implemented via method overloading (compile-time) and method overriding (runtime, through inheritance and dynamic dispatch)."},
     ],
     "SQL Developer": [
         {"q": "What is SQL?", "difficulty": "Easy", "topic": "SQL Basics",
@@ -117,14 +160,28 @@ QUESTIONS = {
         {"q": "What is a JOIN?", "difficulty": "Medium", "topic": "Database Design",
          "keywords": ["combine", "tables", "related", "column", "rows"],
          "model_answer": "A JOIN combines rows from two or more tables based on a related column between them."},
+        {"q": "What is the difference between WHERE and HAVING clauses?", "difficulty": "Hard", "topic": "SQL Basics",
+         "keywords": ["filter rows", "filter groups", "group by", "aggregate"],
+         "model_answer": "WHERE filters individual rows before grouping/aggregation happens, while HAVING filters groups after a GROUP BY, typically used with aggregate functions."},
+        {"q": "What is Indexing in a database and how does it improve performance?", "difficulty": "Hard", "topic": "Database Design",
+         "keywords": ["index", "lookup", "faster", "b-tree", "search"],
+         "model_answer": "An index is a data structure (often a B-tree) built on one or more columns that lets the database find rows without scanning the whole table, dramatically speeding up lookups and searches at the cost of extra storage and slower writes."},
     ],
 }
 
 TIME_LIMIT_SECONDS = 30
+DIFFICULTY_LEVELS = ["Easy", "Medium", "Hard"]
 
 
 def all_roles():
     return list(QUESTIONS.keys())
+
+
+def filter_by_difficulty(question_list, difficulty):
+    """difficulty: one of DIFFICULTY_LEVELS, or 'All' to skip filtering."""
+    if difficulty == "All":
+        return question_list
+    return [q for q in question_list if q["difficulty"] == difficulty]
 
 
 def all_topics():
@@ -269,19 +326,47 @@ def global_stats():
 
 
 # ============================================================
-# SECTION 3 — GRADING (AI-based with keyword fallback)
+# SECTION 3 — GRADING (Claude + OpenAI GPT, with keyword fallback)
 # ============================================================
 
-AI_AVAILABLE = False
-client = None
+# ---------------- Claude setup ----------------
+CLAUDE_AVAILABLE = False
+claude_client = None
 try:
     import anthropic
-    api_key = st.secrets.get("ANTHROPIC_API_KEY", None)
-    if api_key:
-        client = anthropic.Anthropic(api_key=api_key)
-        AI_AVAILABLE = True
+    _anthropic_key = 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
+    if _anthropic_key:
+        claude_client = anthropic.Anthropic(api_key=_anthropic_key)
+        CLAUDE_AVAILABLE = True
 except Exception:
-    AI_AVAILABLE = False
+    CLAUDE_AVAILABLE = False
+
+# ---------------- OpenAI GPT setup ----------------
+GPT_AVAILABLE = False
+gpt_client = None
+GPT_MODEL = "gpt-4o-mini"
+try:
+    import openai
+    _openai_key = sk-...N2sA
+    if _openai_key:
+        gpt_client = openai.OpenAI(api_key=_openai_key)
+        GPT_MODEL = st.secrets.get("OPENAI_MODEL", GPT_MODEL)
+        GPT_AVAILABLE = True
+except Exception:
+    GPT_AVAILABLE = False
+
+# Kept for backwards compatibility with any code referencing the old name
+AI_AVAILABLE = CLAUDE_AVAILABLE or GPT_AVAILABLE
+
+
+def available_providers():
+    """Returns the list of grading providers usable right now."""
+    providers = ["Keyword"]
+    if CLAUDE_AVAILABLE:
+        providers.append("Claude")
+    if GPT_AVAILABLE:
+        providers.append("GPT")
+    return providers
 
 
 def keyword_check(user_answer, keywords):
@@ -302,79 +387,116 @@ def keyword_check(user_answer, keywords):
         return "❌ Incorrect", matched, 0, "This answer misses the key points. Check the model answer below."
 
 
-def ai_check_answer(question_text, user_answer, model_answer):
-    """Smarter semantic grading using Claude. Returns None on failure (caller falls back)."""
-    stripped = user_answer.strip()
-    if stripped == "":
-        return "Blank", [], 0, "Please write an answer before checking it."
-
-    try:
-        prompt = f"""You are grading a candidate's interview answer.
+def _grading_prompt(question_text, user_answer, model_answer):
+    return f"""You are grading a candidate's interview answer.
 
 Question: {question_text}
 Model/Reference Answer: {model_answer}
-Candidate's Answer: {stripped}
+Candidate's Answer: {user_answer}
 
 Grade the candidate's answer for correctness and completeness compared to the reference answer,
 even if worded differently. Respond ONLY with valid JSON, no extra text, in this exact format:
 {{"verdict": "Correct" or "Partial" or "Incorrect", "score": <0, 5, or 10>, "feedback": "<one short sentence of feedback>", "key_points_covered": ["point1", "point2"]}}"""
 
-        response = client.messages.create(
+
+def _parse_grading_json(text):
+    text = text.strip()
+    text = re.sub(r"^```json|```$", "", text).strip()
+    data = json.loads(text)
+
+    verdict = data.get("verdict", "Incorrect")
+    score = int(data.get("score", 0))
+    feedback = data.get("feedback", "")
+    points = data.get("key_points_covered", [])
+
+    label_map = {"Correct": "✅ Correct", "Partial": "🟡 Partially Correct", "Incorrect": "❌ Incorrect"}
+    label = label_map.get(verdict, "❌ Incorrect")
+    return label, points, score, feedback
+
+
+def claude_check_answer(question_text, user_answer, model_answer):
+    """Semantic grading using Claude. Returns None on failure (caller falls back)."""
+    stripped = user_answer.strip()
+    if stripped == "":
+        return "Blank", [], 0, "Please write an answer before checking it."
+    try:
+        response = claude_client.messages.create(
             model="claude-sonnet-4-6",
             max_tokens=300,
-            messages=[{"role": "user", "content": prompt}]
+            messages=[{"role": "user", "content": _grading_prompt(question_text, stripped, model_answer)}]
         )
+        return _parse_grading_json(response.content[0].text)
+    except Exception:
+        return None
 
-        text = response.content[0].text.strip()
-        text = re.sub(r"^```json|```$", "", text).strip()
-        data = json.loads(text)
 
-        verdict = data.get("verdict", "Incorrect")
-        score = int(data.get("score", 0))
-        feedback = data.get("feedback", "")
-        points = data.get("key_points_covered", [])
-
-        label_map = {"Correct": "✅ Correct", "Partial": "🟡 Partially Correct", "Incorrect": "❌ Incorrect"}
-        label = label_map.get(verdict, "❌ Incorrect")
-
-        return label, points, score, feedback
-
+def gpt_check_answer(question_text, user_answer, model_answer):
+    """Semantic grading using OpenAI GPT. Returns None on failure (caller falls back)."""
+    stripped = user_answer.strip()
+    if stripped == "":
+        return "Blank", [], 0, "Please write an answer before checking it."
+    try:
+        response = gpt_client.chat.completions.create(
+            model=GPT_MODEL,
+            max_tokens=300,
+            messages=[{"role": "user", "content": _grading_prompt(question_text, stripped, model_answer)}],
+        )
+        return _parse_grading_json(response.choices[0].message.content)
     except Exception:
         return None
 
 
 def grade_answer(question_text, user_answer, keywords, model_answer):
-    """Routes to AI grading if available/enabled, else keyword grading."""
-    if st.session_state.get("use_ai_checking") and AI_AVAILABLE:
-        result = ai_check_answer(question_text, user_answer, model_answer)
+    """Routes to the selected AI provider (session_state.ai_provider), else keyword grading."""
+    provider = st.session_state.get("ai_provider", "Keyword")
+
+    if provider == "Claude" and CLAUDE_AVAILABLE:
+        result = claude_check_answer(question_text, user_answer, model_answer)
         if result is not None:
             return result
+    elif provider == "GPT" and GPT_AVAILABLE:
+        result = gpt_check_answer(question_text, user_answer, model_answer)
+        if result is not None:
+            return result
+
     return keyword_check(user_answer, keywords)
 
 
 def generate_roadmap_text(name, preferred_role, weak_topics):
     """
-    Optional: use Claude to write a short personalized roadmap paragraph.
-    Returns None if unavailable/fails, so the caller can fall back to the
-    rule-based topic resource list.
+    Optional: use the currently selected AI provider to write a short
+    personalized roadmap paragraph. Returns None if unavailable/fails, so
+    the caller can fall back to the rule-based topic resource list.
     """
-    if not (AI_AVAILABLE and weak_topics):
+    provider = st.session_state.get("ai_provider", "Keyword")
+    if provider not in ("Claude", "GPT") or not weak_topics:
         return None
+
+    topics_str = ", ".join(weak_topics)
+    prompt = (
+        f"Write a short (3-4 sentence), encouraging study roadmap for {name}, "
+        f"who is preparing for a {preferred_role} interview and is currently weak in: "
+        f"{topics_str}. Be specific and motivating, no headers or bullet points, plain prose only."
+    )
+
     try:
-        topics_str = ", ".join(weak_topics)
-        prompt = (
-            f"Write a short (3-4 sentence), encouraging study roadmap for {name}, "
-            f"who is preparing for a {preferred_role} interview and is currently weak in: "
-            f"{topics_str}. Be specific and motivating, no headers or bullet points, plain prose only."
-        )
-        response = client.messages.create(
-            model="claude-sonnet-4-6",
-            max_tokens=200,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        return response.content[0].text.strip()
+        if provider == "Claude" and CLAUDE_AVAILABLE:
+            response = claude_client.messages.create(
+                model="claude-sonnet-4-6",
+                max_tokens=200,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            return response.content[0].text.strip()
+        elif provider == "GPT" and GPT_AVAILABLE:
+            response = gpt_client.chat.completions.create(
+                model=GPT_MODEL,
+                max_tokens=200,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            return response.choices[0].message.content.strip()
     except Exception:
         return None
+    return None
 
 
 # ============================================================
@@ -544,10 +666,17 @@ def page_skill_assessment():
     if not st.session_state.get("sa_active"):
         selected_roles = st.multiselect("Choose roles to be assessed on", all_roles(),
                                          default=[student["preferred_role"]])
-        if st.button("🚀 Start Assessment", type="primary", disabled=not selected_roles):
-            question_list = []
-            for r in selected_roles:
-                question_list.extend(questions_for_role(r))
+        difficulty = st.selectbox("Difficulty", ["All"] + DIFFICULTY_LEVELS)
+
+        question_list = []
+        for r in selected_roles:
+            question_list.extend(questions_for_role(r))
+        question_list = filter_by_difficulty(question_list, difficulty)
+
+        if selected_roles and not question_list:
+            st.warning("No questions match that difficulty for the roles you picked. Try 'All' or a different role.")
+
+        if st.button("🚀 Start Assessment", type="primary", disabled=not question_list):
             st.session_state.sa_active = True
             st.session_state.sa_role_label = " + ".join(selected_roles)
             st.session_state.sa_question_list = question_list
@@ -613,10 +742,16 @@ def page_interview():
     if not st.session_state.get("iv_active"):
         role = st.selectbox("Select Job Role", all_roles(),
                              index=all_roles().index(student["preferred_role"]))
-        if st.button("🎯 Start Interview", type="primary"):
+        difficulty = st.selectbox("Difficulty", ["All"] + DIFFICULTY_LEVELS)
+
+        question_list = filter_by_difficulty(questions_for_role(role), difficulty)
+        if not question_list:
+            st.warning("No questions match that difficulty for this role. Try 'All' or a different difficulty.")
+
+        if st.button("🎯 Start Interview", type="primary", disabled=not question_list):
             st.session_state.iv_active = True
             st.session_state.iv_role = role
-            st.session_state.iv_question_list = questions_for_role(role)
+            st.session_state.iv_question_list = question_list
             st.session_state.iv_question_no = 0
             st.session_state.iv_score = 0
             st.session_state.iv_feedback_log = []
@@ -828,8 +963,9 @@ def page_roadmap():
     ai_text = generate_roadmap_text(student["name"], student["preferred_role"], weak_topics)
     if ai_text:
         st.info(ai_text)
-    elif not AI_AVAILABLE:
-        st.caption("🤖 Add `ANTHROPIC_API_KEY` in Streamlit secrets for an AI-personalized version of this roadmap.")
+    elif not (CLAUDE_AVAILABLE or GPT_AVAILABLE):
+        st.caption("🤖 Add `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` in Streamlit secrets, and select it in the "
+                   "sidebar, for an AI-personalized version of this roadmap.")
 
     st.subheader("Recommended Focus Areas")
     for topic in weak_topics:
@@ -845,10 +981,12 @@ def page_roadmap():
 st.set_page_config(page_title="AI Interview Preparation Assistant", page_icon="🤖", layout="centered")
 
 # ------------------- SESSION STATE DEFAULTS -------------------
+_providers = available_providers()  # always includes "Keyword"; may include "Claude" / "GPT"
 defaults = {
     "page": "Home",
     "student_email": None,
-    "use_ai_checking": AI_AVAILABLE,
+    # Default to the best available AI grader, falling back to keyword matching
+    "ai_provider": "Claude" if CLAUDE_AVAILABLE else ("GPT" if GPT_AVAILABLE else "Keyword"),
 }
 for key, value in defaults.items():
     if key not in st.session_state:
@@ -885,14 +1023,19 @@ with st.sidebar:
         st.info("No profile yet.")
 
     st.divider()
-    if AI_AVAILABLE:
-        st.success("🤖 AI-based smart checking: ON")
-        st.session_state.use_ai_checking = st.checkbox(
-            "Use AI checking (semantic)", value=st.session_state.use_ai_checking
+    st.caption("🤖 Answer Grading")
+    if len(_providers) > 1:
+        st.session_state.ai_provider = st.radio(
+            "Grading method", _providers,
+            index=_providers.index(st.session_state.ai_provider) if st.session_state.ai_provider in _providers else 0,
         )
+        provider_labels = {"Claude": "Claude (semantic)", "GPT": "OpenAI GPT (semantic)", "Keyword": "Keyword matching"}
+        st.caption(f"Using: **{provider_labels.get(st.session_state.ai_provider, st.session_state.ai_provider)}**")
     else:
-        st.info("🤖 AI checking unavailable — using keyword-based checking.\n\n"
-                 "Add `ANTHROPIC_API_KEY` in Streamlit secrets to enable smarter grading.")
+        st.session_state.ai_provider = "Keyword"
+        st.info("Using keyword-based checking.\n\n"
+                 "Add `ANTHROPIC_API_KEY` and/or `OPENAI_API_KEY` in Streamlit secrets to unlock "
+                 "AI-based semantic grading (Claude and/or GPT).")
 
 # ------------------- MAIN CONTENT -------------------
 st.title("🤖 AI Interview Preparation Assistant")
