@@ -9,6 +9,11 @@ data — including course and academic marks — from a password-protected
 Admin Panel. All backed by a local JSON file (students_data.json, created
 next to this script).
 
+New in this version:
+  - AI follow-up questions during Interview practice (probes weak spots)
+  - Shareable PDF certificate after completing an Interview / Mock Interview
+  - Full AI-led conversational Mock Interview mode
+
 Run with:  streamlit run app.py
 """
 
@@ -369,6 +374,17 @@ try:
 except Exception:
     GPT_AVAILABLE = False
 
+# ---------------- reportlab setup (for the PDF certificate) ----------------
+REPORTLAB_AVAILABLE = False
+try:
+    from reportlab.lib.pagesizes import letter, landscape
+    from reportlab.lib.units import inch
+    from reportlab.lib.colors import HexColor
+    from reportlab.pdfgen import canvas as pdfcanvas
+    REPORTLAB_AVAILABLE = True
+except Exception:
+    REPORTLAB_AVAILABLE = False
+
 # Kept for backwards compatibility with any code referencing the old name
 AI_AVAILABLE = CLAUDE_AVAILABLE or GPT_AVAILABLE
 
@@ -513,6 +529,262 @@ def generate_roadmap_text(name, preferred_role, weak_topics):
     return None
 
 
+def generate_followup_question(question_text, user_answer, model_answer, feedback):
+    """
+    Uses the currently selected AI provider to write ONE natural follow-up
+    interview question that probes whatever the candidate's answer left
+    weak, vague, or unexplored. Returns None if unavailable/fails.
+    """
+    provider = st.session_state.get("ai_provider", "Keyword")
+    if provider not in ("Claude", "GPT"):
+        return None
+    stripped = (user_answer or "").strip()
+    if stripped == "":
+        return None
+
+    prompt = (
+        "You are an interviewer conducting a live technical interview.\n\n"
+        f"Original question: {question_text}\n"
+        f"Reference answer: {model_answer}\n"
+        f"Candidate's answer: {stripped}\n"
+        f"Assessment of that answer: {feedback}\n\n"
+        "Write ONE short, natural-sounding follow-up question that digs deeper into whatever "
+        "the candidate's answer left weak, vague, or unexplored (or, if the answer was strong, "
+        "a slightly harder extension of the same topic). "
+        "Respond with ONLY the question text — no preamble, no quotes, no numbering."
+    )
+
+    try:
+        if provider == "Claude" and CLAUDE_AVAILABLE:
+            response = claude_client.messages.create(
+                model="claude-sonnet-4-6",
+                max_tokens=100,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            return response.content[0].text.strip()
+        elif provider == "GPT" and GPT_AVAILABLE:
+            response = gpt_client.chat.completions.create(
+                model=GPT_MODEL,
+                max_tokens=100,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            return response.choices[0].message.content.strip()
+    except Exception:
+        return None
+    return None
+
+
+# ---------------- PDF certificate generation ----------------
+
+def generate_certificate_pdf(student_name, role, score, possible, issued_on, feedback_log):
+    """
+    Builds a two-page PDF: a landscape certificate page, followed by a
+    portrait answer-breakdown page. Returns PDF bytes, or None if reportlab
+    isn't installed.
+    """
+    if not REPORTLAB_AVAILABLE:
+        return None
+
+    buf = io.BytesIO()
+    page_w, page_h = landscape(letter)
+    c = pdfcanvas.Canvas(buf, pagesize=(page_w, page_h))
+
+    navy = HexColor("#1f2a44")
+    gold = HexColor("#b8912f")
+    cream = HexColor("#faf7f0")
+    slate = HexColor("#4a4a4a")
+
+    # ---- Page 1: certificate ----
+    c.setFillColor(cream)
+    c.rect(0, 0, page_w, page_h, fill=1, stroke=0)
+
+    c.setStrokeColor(gold)
+    c.setLineWidth(3)
+    c.rect(0.4 * inch, 0.4 * inch, page_w - 0.8 * inch, page_h - 0.8 * inch, fill=0, stroke=1)
+    c.setLineWidth(0.75)
+    c.rect(0.52 * inch, 0.52 * inch, page_w - 1.04 * inch, page_h - 1.04 * inch, fill=0, stroke=1)
+
+    c.setFillColor(navy)
+    c.setFont("Helvetica-Bold", 30)
+    c.drawCentredString(page_w / 2, page_h - 1.55 * inch, "Certificate of Completion")
+
+    c.setFont("Helvetica", 13)
+    c.setFillColor(slate)
+    c.drawCentredString(page_w / 2, page_h - 2.1 * inch, "AI Interview Preparation Assistant")
+
+    c.setFont("Helvetica", 13)
+    c.drawCentredString(page_w / 2, page_h - 2.8 * inch, "This certifies that")
+
+    c.setFont("Helvetica-Bold", 26)
+    c.setFillColor(navy)
+    c.drawCentredString(page_w / 2, page_h - 3.5 * inch, student_name)
+
+    pct = round(100 * score / possible) if possible else 0
+    c.setFont("Helvetica", 13)
+    c.setFillColor(slate)
+    c.drawCentredString(page_w / 2, page_h - 4.1 * inch,
+                         f"completed a {role} interview practice session")
+    c.drawCentredString(page_w / 2, page_h - 4.5 * inch,
+                         f"scoring {score} / {possible}  ({pct}%)")
+
+    c.setFont("Helvetica-Oblique", 11)
+    c.drawCentredString(page_w / 2, page_h - 5.3 * inch, f"Issued on {issued_on}")
+
+    c.setStrokeColor(gold)
+    c.setLineWidth(1)
+    c.line(page_w / 2 - 1.3 * inch, 1.05 * inch, page_w / 2 + 1.3 * inch, 1.05 * inch)
+    c.setFont("Helvetica", 10)
+    c.setFillColor(gold)
+    c.drawCentredString(page_w / 2, 0.85 * inch, "AI Interview Preparation Assistant")
+
+    c.showPage()
+
+    # ---- Page 2: answer breakdown ----
+    page2_w, page2_h = letter
+    c.setPageSize((page2_w, page2_h))
+
+    margin = 0.75 * inch
+    y = page2_h - margin
+
+    c.setFillColor(navy)
+    c.setFont("Helvetica-Bold", 18)
+    c.drawString(margin, y, "Answer Breakdown")
+    y -= 0.35 * inch
+
+    c.setFont("Helvetica", 11)
+    c.setFillColor(slate)
+    c.drawString(margin, y, f"Candidate: {student_name}    Role: {role}    Score: {score}/{possible} ({pct}%)")
+    y -= 0.3 * inch
+    c.setStrokeColor(gold)
+    c.line(margin, y, page2_w - margin, y)
+    y -= 0.25 * inch
+
+    text_width = page2_w - 2 * margin
+
+    def wrap(text, font, size, max_w):
+        c.setFont(font, size)
+        words = (text or "").split()
+        lines, line = [], ""
+        for w in words:
+            trial = (line + " " + w).strip()
+            if c.stringWidth(trial, font, size) <= max_w:
+                line = trial
+            else:
+                if line:
+                    lines.append(line)
+                line = w
+        if line:
+            lines.append(line)
+        return lines or [""]
+
+    for i, item in enumerate(feedback_log, start=1):
+        block_lines = []
+        block_lines.append(("Helvetica-Bold", 11, navy,
+                             f"Q{i}. {item.get('question', '')}  —  {item.get('result', '')} ({item.get('points', 0)} pts)"))
+        if item.get("feedback"):
+            block_lines.append(("Helvetica-Oblique", 9.5, slate, f"Feedback: {item['feedback']}"))
+
+        needed_h = 0
+        wrapped_all = []
+        for font, size, color, txt in block_lines:
+            wrapped = wrap(txt, font, size, text_width)
+            wrapped_all.append((font, size, color, wrapped))
+            needed_h += len(wrapped) * (size + 4) + 6
+
+        if y - needed_h < margin:
+            c.showPage()
+            c.setPageSize((page2_w, page2_h))
+            y = page2_h - margin
+
+        for font, size, color, wrapped in wrapped_all:
+            c.setFont(font, size)
+            c.setFillColor(color)
+            for wl in wrapped:
+                c.drawString(margin, y, wl)
+                y -= (size + 4)
+            y -= 2
+        y -= 8
+
+    c.save()
+    buf.seek(0)
+    return buf.getvalue()
+
+
+# ---------------- AI-led mock interview ----------------
+
+def _mock_interview_system_prompt(role):
+    return (
+        f"You are an experienced, friendly technical interviewer conducting a mock {role} interview. "
+        "Ask one question at a time. After hearing an answer, give brief (1-2 sentence) constructive "
+        "feedback, then ask the next question — either a natural follow-up that probes the same topic "
+        "deeper, or a new topic if the candidate answered well. Keep questions realistic and appropriately "
+        "scoped for a job interview. Never repeat a question you've already asked."
+    )
+
+
+def mock_interview_next_turn(role, transcript, last_answer=None):
+    """
+    transcript: list of {"question":..., "answer":..., "feedback":..., "score":...} completed so far.
+    last_answer: the candidate's latest answer, or None to generate the opening question.
+    Returns a dict like {"feedback": str|None, "score": int|None, "next_question": str}, or None on failure.
+    """
+    provider = st.session_state.get("ai_provider", "Keyword")
+    if provider not in ("Claude", "GPT"):
+        return None
+
+    system_prompt = _mock_interview_system_prompt(role)
+
+    if last_answer is None:
+        user_msg = (
+            f"Role: {role}\n"
+            "This is the start of the interview. Ask the first question only, nothing else.\n"
+            'Respond ONLY with valid JSON: {"next_question": "<question>"}'
+        )
+    else:
+        history_text = "".join(
+            f"\nInterviewer: {t['question']}\nCandidate: {t['answer']}\n" for t in transcript
+        )
+        user_msg = (
+            f"Role: {role}\n"
+            f"Conversation so far:{history_text}\n"
+            f"Candidate's latest answer: {last_answer}\n\n"
+            "Give brief feedback (1-2 sentences) on the latest answer, a score from 0 to 10, "
+            "and then the next interview question.\n"
+            'Respond ONLY with valid JSON: {"feedback": "<feedback>", "score": <0-10 integer>, "next_question": "<question>"}'
+        )
+
+    try:
+        if provider == "Claude" and CLAUDE_AVAILABLE:
+            response = claude_client.messages.create(
+                model="claude-sonnet-4-6",
+                max_tokens=300,
+                system=system_prompt,
+                messages=[{"role": "user", "content": user_msg}],
+            )
+            text = response.content[0].text
+        else:  # GPT
+            response = gpt_client.chat.completions.create(
+                model=GPT_MODEL,
+                max_tokens=300,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_msg},
+                ],
+            )
+            text = response.choices[0].message.content
+
+        text = text.strip()
+        text = re.sub(r"^```json|```$", "", text).strip()
+        data = json.loads(text)
+        if "next_question" not in data:
+            return None
+        if "score" in data:
+            data["score"] = max(0, min(10, int(data["score"])))
+        return data
+    except Exception:
+        return None
+
+
 # ============================================================
 # SECTION 4 — PAGES
 # ============================================================
@@ -576,6 +848,21 @@ def readiness_from_rows(rows):
     return avg, label
 
 
+def certificate_download_button(student_name, role, score, possible, feedback_log, key):
+    """Renders a PDF certificate download button, or a helpful note if reportlab is missing."""
+    if not REPORTLAB_AVAILABLE:
+        st.caption("📜 Install `reportlab` (`pip install reportlab`) to unlock a downloadable PDF certificate.")
+        return
+    pdf_bytes = generate_certificate_pdf(
+        student_name, role, score, possible,
+        datetime.now().strftime("%d %b %Y, %I:%M %p"), feedback_log,
+    )
+    if pdf_bytes:
+        st.download_button("📜 Download Certificate (PDF)", pdf_bytes,
+                            file_name=f"{student_name.replace(' ', '_')}_Certificate.pdf",
+                            mime="application/pdf", key=key)
+
+
 # ------------------------------------------------------------------
 # HOME
 # ------------------------------------------------------------------
@@ -594,6 +881,7 @@ def page_home():
     cards = [
         ("📊 Skill Assessment", "Test yourself across multiple topics at once.", "Skill Assessment"),
         ("💡 Interview Questions", "Practice timed, role-specific interview questions.", "Interview Questions"),
+        ("🎤 Mock Interview (AI)", "A live, conversational interview led by AI.", "Mock Interview (AI)"),
         ("⚠️ Weak Topic Detection", "See exactly which topics need more work.", "Progress Tracker"),
         ("📈 Progress Tracking", "Track your score against a target for every topic.", "Progress Tracker"),
         ("🗺️ AI Learning Roadmap", "Get a personalized study plan based on your gaps.", "AI Roadmap"),
@@ -738,6 +1026,8 @@ def page_skill_assessment():
         st.metric("Score", f"{total} / {len(log) * 10}")
 
         record_attempt(student["email"], st.session_state.sa_role_label, "Skill Assessment", log)
+        certificate_download_button(student["name"], st.session_state.sa_role_label, total, len(log) * 10,
+                                     log, key="sa_cert_dl")
 
         for item in log:
             with st.expander(f"{item['question']} — {item['result']} ({item['points']} pts)"):
@@ -785,6 +1075,7 @@ def page_interview():
 
     if st.session_state.iv_question_no < len(question_list):
         current_q = question_list[st.session_state.iv_question_no]
+        idx = st.session_state.iv_question_no
 
         if st.session_state.iv_question_start_time is None:
             st.session_state.iv_question_start_time = time.time()
@@ -792,9 +1083,9 @@ def page_interview():
         elapsed = time.time() - st.session_state.iv_question_start_time
         remaining = max(0, int(TIME_LIMIT_SECONDS - elapsed))
 
-        st.header(f"Question {st.session_state.iv_question_no + 1} of {len(question_list)}")
+        st.header(f"Question {idx + 1} of {len(question_list)}")
         st.caption(f"Topic: {current_q['topic']} · Difficulty: {current_q['difficulty']}")
-        st.progress(st.session_state.iv_question_no / len(question_list))
+        st.progress(idx / len(question_list))
         st.write(current_q["q"])
 
         timer_col, _ = st.columns([1, 3])
@@ -804,7 +1095,7 @@ def page_interview():
             else:
                 st.warning("⏰ Time's up! Please submit your answer.")
 
-        answer = st.text_area("Write Your Answer", key=f"iv_answer_{st.session_state.iv_question_no}")
+        answer = st.text_area("Write Your Answer", key=f"iv_answer_{idx}")
 
         col1, col2 = st.columns([1, 1])
         with col1:
@@ -829,6 +1120,19 @@ def page_interview():
                 st.write(f"**Key points detected:** {', '.join(matched) if matched else 'none'}")
                 st.write(f"**Model Answer:** {current_q['model_answer']}")
 
+                # AI follow-up question — probes whatever the answer left weak
+                followup_key = f"iv_followup_{idx}"
+                if followup_key not in st.session_state:
+                    with st.spinner("Interviewer is thinking of a follow-up..."):
+                        st.session_state[followup_key] = generate_followup_question(
+                            current_q["q"], answer, current_q["model_answer"], feedback
+                        )
+                followup = st.session_state.get(followup_key)
+                if followup:
+                    st.markdown("**💬 Follow-up question:**")
+                    st.info(followup)
+                    st.caption("Just for reflection — this follow-up isn't scored.")
+
         if next_clicked:
             with st.spinner("Scoring your answer..."):
                 label, matched, points, feedback = grade_answer(
@@ -845,6 +1149,7 @@ def page_interview():
             })
             st.session_state.iv_question_no += 1
             st.session_state.iv_question_start_time = time.time()
+            st.session_state.pop(followup_key, None)
             st.rerun()
 
     else:
@@ -856,6 +1161,10 @@ def page_interview():
 
         record_attempt(student["email"], st.session_state.iv_role, "Interview",
                                 st.session_state.iv_feedback_log)
+
+        certificate_download_button(student["name"], st.session_state.iv_role,
+                                     st.session_state.iv_score, len(question_list) * 10,
+                                     st.session_state.iv_feedback_log, key="iv_cert_dl")
 
         st.subheader("📋 Answer Review")
         for i, item in enumerate(st.session_state.iv_feedback_log, start=1):
@@ -882,11 +1191,113 @@ def page_interview():
             result_lines.append(f"Model Answer: {item['model_answer']}")
         result = "\n".join(result_lines)
 
-        st.download_button("📥 Download Result", result, file_name="Interview_Result.txt", mime="text/plain")
+        st.download_button("📥 Download Result (TXT)", result, file_name="Interview_Result.txt", mime="text/plain")
 
         if st.button("🔄 Restart Interview"):
             for k in ("iv_active", "iv_role", "iv_question_list", "iv_question_no", "iv_score",
                       "iv_feedback_log", "iv_question_start_time"):
+                st.session_state.pop(k, None)
+            for k in list(st.session_state.keys()):
+                if k.startswith("iv_followup_"):
+                    st.session_state.pop(k, None)
+            st.rerun()
+
+
+# ------------------------------------------------------------------
+# MOCK INTERVIEW (AI-led, fully conversational)
+# ------------------------------------------------------------------
+
+def page_mock_interview():
+    student = require_profile("Mock Interview (AI)")
+    if student is None:
+        return
+
+    st.subheader("🎤 Mock Interview (AI-led)")
+    st.caption("An AI interviewer asks questions one at a time, reacts to your answers, "
+               "and decides what to ask next — just like a real conversation.")
+
+    if not (CLAUDE_AVAILABLE or GPT_AVAILABLE):
+        st.warning("This mode needs an AI provider. Add `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` "
+                   "in Streamlit secrets, then pick Claude or GPT in the sidebar's Answer Grading section.")
+        return
+    if st.session_state.get("ai_provider") not in ("Claude", "GPT"):
+        st.warning("Select **Claude** or **GPT** as the grading method in the sidebar to use this mode.")
+        return
+
+    if not st.session_state.get("mi_active"):
+        role = st.selectbox("Select Job Role", all_roles(),
+                             index=all_roles().index(student["preferred_role"]), key="mi_role_select")
+        num_q = st.slider("Number of questions", min_value=3, max_value=8, value=5)
+
+        if st.button("🎬 Start Mock Interview", type="primary"):
+            with st.spinner("Your interviewer is preparing the first question..."):
+                result = mock_interview_next_turn(role, [], last_answer=None)
+            if not result or not result.get("next_question"):
+                st.error("Couldn't start the interview — please try again in a moment.")
+                return
+            st.session_state.mi_active = True
+            st.session_state.mi_role = role
+            st.session_state.mi_num_questions = num_q
+            st.session_state.mi_transcript = []
+            st.session_state.mi_current_question = result["next_question"]
+            st.rerun()
+        return
+
+    transcript = st.session_state.mi_transcript
+    qnum = len(transcript) + 1
+    total_q = st.session_state.mi_num_questions
+
+    if qnum <= total_q:
+        st.progress((qnum - 1) / total_q)
+        st.write(f"**Question {qnum} of {total_q}** · Role: {st.session_state.mi_role}")
+        st.info(st.session_state.mi_current_question)
+
+        answer = st.text_area("Your Answer", key=f"mi_answer_{qnum}")
+        if st.button("➡️ Submit & Continue", key=f"mi_submit_{qnum}", type="primary"):
+            if answer.strip() == "":
+                st.warning("Please write an answer before continuing.")
+            else:
+                with st.spinner("Interviewer is reviewing your answer..."):
+                    result = mock_interview_next_turn(
+                        st.session_state.mi_role, transcript, last_answer=answer.strip()
+                    )
+                if not result or not result.get("next_question"):
+                    st.error("The interviewer had trouble responding — please try again.")
+                else:
+                    transcript.append({
+                        "question": st.session_state.mi_current_question,
+                        "answer": answer.strip(),
+                        "feedback": result.get("feedback", ""),
+                        "score": int(result.get("score", 5)),
+                    })
+                    st.session_state.mi_current_question = result["next_question"]
+                    st.rerun()
+    else:
+        st.success("🎉 Mock Interview Complete!")
+        total = sum(t["score"] for t in transcript)
+        possible = len(transcript) * 10
+        st.metric("Interview Score", f"{total} / {possible}")
+
+        feedback_log = [
+            {
+                "question": t["question"], "topic": "Mock Interview", "answer": t["answer"],
+                "result": "✅ Correct" if t["score"] >= 8 else ("🟡 Partially Correct" if t["score"] >= 4 else "❌ Incorrect"),
+                "matched_keywords": [], "points": t["score"], "model_answer": "—", "feedback": t["feedback"],
+            }
+            for t in transcript
+        ]
+        record_attempt(student["email"], st.session_state.mi_role, "Mock Interview (AI)", feedback_log)
+        certificate_download_button(student["name"], st.session_state.mi_role, total, possible,
+                                     feedback_log, key="mi_cert_dl")
+
+        st.subheader("📋 Interview Transcript")
+        for i, t in enumerate(transcript, start=1):
+            with st.expander(f"Q{i}: {t['question']} — {t['score']}/10"):
+                st.write(f"**Your Answer:** {t['answer']}")
+                st.write(f"**Interviewer Feedback:** {t['feedback']}")
+
+        if st.button("🔄 Start New Mock Interview"):
+            for k in ("mi_active", "mi_role", "mi_num_questions", "mi_transcript", "mi_current_question"):
                 st.session_state.pop(k, None)
             st.rerun()
 
@@ -1103,6 +1514,7 @@ PAGES = {
     "Dashboard": page_dashboard,
     "AI Roadmap": page_roadmap,
     "Interview Questions": page_interview,
+    "Mock Interview (AI)": page_mock_interview,
     "Progress Tracker": page_progress_tracker,
     "Admin Panel": page_admin,
 }
@@ -1140,7 +1552,8 @@ with st.sidebar:
         st.session_state.ai_provider = "Keyword"
         st.info("Using keyword-based checking.\n\n"
                  "Add `ANTHROPIC_API_KEY` and/or `OPENAI_API_KEY` in Streamlit secrets to unlock "
-                 "AI-based semantic grading (Claude and/or GPT).")
+                 "AI-based semantic grading (Claude and/or GPT) — this also enables AI follow-up "
+                 "questions and the Mock Interview (AI) mode.")
 
 # ------------------- MAIN CONTENT -------------------
 st.title("🤖 AI Interview Preparation Assistant")
